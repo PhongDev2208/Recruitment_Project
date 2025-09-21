@@ -1,25 +1,36 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useParams } from "react-router-dom";
 import GoBack from "../../components/GoBack";
-import { useEffect, useState } from "react";
 import { getDetailJob } from "../../services/jobService";
-import { Tag } from "antd";
+import { Tag, Spin, Alert } from "antd";
+import { useApi } from "../../hooks/useApi";
 
 function JobDetail() {
   const params = useParams();
-  const [data, setData] = useState();
+  const { data, loading, error } = useApi(() => getDetailJob(params.id));
 
-  useEffect(() => {
-    const fetchApi = async () => {
-      const response = await getDetailJob(params.id);
-      if (response) {
-        setData(response);
-      }
-    };
-    fetchApi();
-  }, []);
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "50px" }}>
+        <Spin size="large" />
+        <div style={{ marginTop: 16 }}>Đang tải thông tin job...</div>
+      </div>
+    );
+  }
 
-  console.log(data);
+  if (error) {
+    return (
+      <>
+        <GoBack />
+        <Alert
+          message="Lỗi"
+          description={error}
+          type="error"
+          showIcon
+          style={{ marginTop: 16 }}
+        />
+      </>
+    );
+  }
 
   return (
     <>

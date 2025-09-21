@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { getListJob } from "../../services/jobService";
 import { Button, Table, Tag, Tooltip } from "antd";
 import { Link } from "react-router-dom";
@@ -7,26 +7,35 @@ import { EyeOutlined } from "@ant-design/icons";
 import EditJob from "./EditJob";
 import DeleteJob from "./DeleteJob";
 import { getCookie } from "../../helpers/cookie";
+import { useApi } from "../../hooks/useApi";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import ErrorDisplay from "../../components/ErrorDisplay";
 
 function JobList(props) {
   const idCompany = getCookie("id");
   const { className = "" } = props;
-  const [jobs, setJobs] = useState([]);
-
-  const fetchApi = async () => {
-    const response = await getListJob(idCompany);
-    if (response) {
-      setJobs(response.reverse());
-    }
-  };
+  const {
+    data: jobs,
+    loading,
+    error,
+    refetch,
+  } = useApi(() => getListJob(idCompany));
 
   useEffect(() => {
-    fetchApi();
+    refetch();
   }, []);
 
   const handleReload = () => {
-    fetchApi();
+    refetch();
   };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return <ErrorDisplay message="Error loading jobs" description={error} />;
+  }
 
   const columns = [
     {
@@ -80,7 +89,7 @@ function JobList(props) {
       key: "actions",
       render: (_, record) => (
         <>
-          <Link to={`/detail-job/${record.id}`}>
+          <Link to={`/detail-job/${record._id}`}>
             <Tooltip title="Xem chi tiết">
               <Button icon={<EyeOutlined />}></Button>
             </Tooltip>
@@ -95,7 +104,7 @@ function JobList(props) {
   return (
     <>
       <div className={className}>
-        <Table dataSource={jobs} columns={columns} rowKey="id" />
+        <Table dataSource={jobs || []} columns={columns} rowKey="_id" />
       </div>
     </>
   );

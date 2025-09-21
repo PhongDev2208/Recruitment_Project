@@ -1,29 +1,44 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Card } from "antd";
+import { Card, Spin, Alert } from "antd";
 import { getCookie } from "../../helpers/cookie";
-import { useEffect, useState } from "react";
 import { getDetailCompany } from "../../services/companyService";
+import { useApi } from "../../hooks/useApi";
 
 function InfoCompany() {
   const idCompany = getCookie("id");
-  const [info, setInfo] = useState();
+  const {
+    data: info,
+    loading,
+    error,
+  } = useApi(() => getDetailCompany(idCompany), [idCompany]);
 
-  useEffect(() => {
-    const fetchApi = async () => {
-      const response = await getDetailCompany(idCompany);
-      if (response) {
-        setInfo(response);
-      }
-    };
-    fetchApi();
-  }, []);
+  if (loading) {
+    return (
+      <Card
+        title="Thông tin công ty"
+        size="small"
+        style={{ textAlign: "center" }}
+      >
+        <Spin size="large" />
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card title="Thông tin công ty" size="small">
+        <Alert message="Lỗi" description={error} type="error" showIcon />
+      </Card>
+    );
+  }
 
   return (
     <>
       {info && (
         <Card title="Thông tin công ty" size="small">
           <div>
-            Tên công ty: <strong>{info.companyName}</strong>
+            Tên công ty:{" "}
+            <strong>{info.companyName || info.name || "Chưa cập nhật"}</strong>
           </div>
           <div>
             Email: <strong>{info.email}</strong>
@@ -37,7 +52,7 @@ function InfoCompany() {
         </Card>
       )}
     </>
-  )
+  );
 }
 
 export default InfoCompany;

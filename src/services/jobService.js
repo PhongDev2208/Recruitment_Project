@@ -1,31 +1,29 @@
 import { del, get, patch, post } from "../utils/request";
 
 export const createJob = async (options) => {
-  const result = await post(`jobs`, options);
-  return result;
+  return await post(`jobs`, options);
 };
 
 export const updateJob = async (id, options) => {
-  const result = await patch(`jobs/${id}`, options);
-  return result;
+  return await patch(`jobs/${id}`, options);
 };
 
 export const deleteJob = async (id) => {
-  const result = await del(`jobs/${id}`);
-  return result;
+  return await del(`jobs/${id}`);
 };
 
 export const getListJob = async (id) => {
-  const result = await get(`jobs?idCompany=${id}`);
-  return result;
+  return await get(`jobs?idCompany=${id}`);
 };
 
 export const getDetailJob = async (id) => {
-  const result = await get(`jobs/${id}`);
-  return result;
+  return await get(`jobs/${id}`);
 };
 
 export const getAllJob = async () => {
-  const result = await get(`jobs`);
-  return result;
+  return await get(`jobs`);
+};
+
+export const getJobStatistic = async () => {
+  return await get(`jobs/statistic`);
 };

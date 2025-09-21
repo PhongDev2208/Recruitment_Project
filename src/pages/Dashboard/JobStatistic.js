@@ -1,31 +1,31 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Card } from "antd";
-import { getCookie } from "../../helpers/cookie";
-import { useEffect, useState } from "react";
-import { getListJob } from "../../services/jobService";
+import { Card, Spin, Alert } from "antd";
+import { getJobStatistic } from "../../services/jobService";
+import { useApi } from "../../hooks/useApi";
 
 function JobStatistic() {
-  const idCompany = getCookie("id");
-  const [data, setData] = useState();
+  const { data, loading, error } = useApi(() => getJobStatistic());
 
-  useEffect(() => {
-    const fetchApi = async () => {
-      const response = await getListJob(idCompany);
-      if (response) {
-        let obj = {
-          total: 0,
-          statusTrue: 0,
-          statusFalse: 0,
-        };
-        obj.total = response.length;
-        response.forEach((item) => {
-          item.status ? obj.statusTrue++ : obj.statusFalse++;
-        });
-        setData(obj);
-      }
-    };
-    fetchApi();
-  }, []);
+  if (loading) {
+    return (
+      <Card
+        title="Job"
+        className="mb-20"
+        size="small"
+        style={{ textAlign: "center" }}
+      >
+        <Spin size="large" />
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card title="Job" className="mb-20" size="small">
+        <Alert message="Lỗi" description={error} type="error" showIcon />
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -35,10 +35,10 @@ function JobStatistic() {
             Số lượng job: <strong>{data.total}</strong>
           </div>
           <div>
-            Job đang bật: <strong>{data.statusTrue}</strong>
+            Job đang bật: <strong>{data.totalActive}</strong>
           </div>
           <div>
-            Job đang tắt: <strong>{data.statusFalse}</strong>
+            Job đang tắt: <strong>{data.totalInactive}</strong>
           </div>
         </Card>
       )}

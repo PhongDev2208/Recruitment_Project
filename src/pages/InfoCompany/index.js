@@ -8,37 +8,43 @@ import {
   InputNumber,
   Row,
   message,
+  Spin,
+  Alert,
 } from "antd";
-import { rules } from "../../contants";
+import { rules } from "../../constants";
 import { getCookie } from "../../helpers/cookie";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { editCompany, getDetailCompany } from "../../services/companyService";
+import { useApi, useAsyncOperation } from "../../hooks/useApi";
 const { TextArea } = Input;
 
 function InfoCompany() {
   const idCompany = getCookie("id");
-  const [info, setInfo] = useState();
   const [isEdit, setIsEdit] = useState(false);
   const [form] = Form.useForm();
   const [mess, contextHolder] = message.useMessage();
 
-  const fetchApi = async () => {
-    const response = await getDetailCompany(idCompany);
-    if (response) {
-      setInfo(response);
-    }
-  };
+  // Get company info using useApi
+  const {
+    data: info,
+    loading,
+    error,
+    refetch,
+  } = useApi(() => getDetailCompany(idCompany), [idCompany]);
 
-  useEffect(() => {
-    fetchApi();
-  }, []);
+  // For update operations
+  const { execute: updateCompany, loading: updating } = useAsyncOperation();
 
   const handleFinish = async (values) => {
-    const response = await editCompany(idCompany, values);
-    if (response) {
+    try {
+      const response = await updateCompany(() =>
+        editCompany(idCompany, values)
+      );
       mess.success("Cập nhật thành công!");
-      fetchApi();
+      refetch(); // Refresh data
       setIsEdit(false);
+    } catch (error) {
+      mess.error("Cập nhật thất bại!");
     }
   };
 
@@ -51,6 +57,27 @@ function InfoCompany() {
     setIsEdit(true);
   };
 
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "50px" }}>
+        <Spin size="large" />
+        <div style={{ marginTop: 16 }}>Đang tải thông tin công ty...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert
+        message="Lỗi"
+        description={error}
+        type="error"
+        showIcon
+        style={{ marginTop: 16 }}
+      />
+    );
+  }
+
   return (
     <>
       {contextHolder}
@@ -60,9 +87,13 @@ function InfoCompany() {
           title="Thông tin công ty"
           extra={
             !isEdit ? (
-              <Button onClick={handleEdit}>Chỉnh sửa</Button>
+              <Button onClick={handleEdit} disabled={updating}>
+                Chỉnh sửa
+              </Button>
             ) : (
-              <Button onClick={handleCancel}>Hủy</Button>
+              <Button onClick={handleCancel} disabled={updating}>
+                Hủy
+              </Button>
             )
           }
         >

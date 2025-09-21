@@ -10,22 +10,35 @@ import {
   Tooltip,
   message,
 } from "antd";
-import { rules } from "../../contants";
-import { useEffect, useState } from "react";
+import { rules } from "../../constants";
+import { useState } from "react";
 import { getListTag } from "../../services/tagService";
 import { updateJob } from "../../services/jobService";
 import { getTimeCurrent } from "../../helpers/getTime";
 import { EditOutlined } from "@ant-design/icons";
 import { getListCity } from "../../services/cityService";
+import { useApi, useAsyncOperation } from "../../hooks/useApi";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import ErrorDisplay from "../../components/ErrorDisplay";
 const { TextArea } = Input;
 
 function EditJob(props) {
   const { record, onReload } = props;
   const [form] = Form.useForm();
-  const [tags, setTags] = useState([]);
-  const [city, setCity] = useState([]);
   const [mess, contextHolder] = message.useMessage();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { execute: updateJobAsync, loading: updating } = useAsyncOperation();
+
+  const {
+    data: tags,
+    loading: tagsLoading,
+    error: tagsError,
+  } = useApi(getListTag);
+  const {
+    data: cities,
+    loading: citiesLoading,
+    error: citiesError,
+  } = useApi(getListCity);
 
   const showModal = () => {
     setIsModalOpen(true);
@@ -36,30 +49,11 @@ function EditJob(props) {
     setIsModalOpen(false);
   };
 
-  useEffect(() => {
-    const fetchApi = async () => {
-      const response = await getListTag();
-      if (response) {
-        setTags(response);
-      }
-    };
-    fetchApi();
-  }, []);
-
-  useEffect(() => {
-    const fetchApi = async () => {
-      const response = await getListCity();
-      if (response) {
-        setCity(response);
-      }
-    };
-    fetchApi();
-  }, []);
-
   const handleFinish = async (values) => {
-    values.updateAt = getTimeCurrent();
-    const response = await updateJob(record.id, values);
-    if (response) {
+    try {
+      values.updateAt = getTimeCurrent();
+      await updateJobAsync(() => updateJob(record._id, values));
+
       setIsModalOpen(false);
       onReload();
       mess.open({
@@ -67,10 +61,10 @@ function EditJob(props) {
         content: "Cập nhật thành công!",
         duration: 5,
       });
-    } else {
+    } catch (error) {
       mess.open({
         type: "error",
-        content: "Cập nhật không thành công!",
+        content: error.message || "Cập nhật không thành công!",
         duration: 3,
       });
     }
@@ -120,7 +114,7 @@ function EditJob(props) {
             </Col>
             <Col span={24}>
               <Form.Item label="Thành phố" name="city" rules={rules}>
-                <Select mode="multiple" options={city} />
+                <Select mode="multiple" options={cities} />
               </Form.Item>
             </Col>
             <Col span={24}>
@@ -139,7 +133,7 @@ function EditJob(props) {
             </Col>
             <Col span={24}>
               <Form.Item>
-                <Button type="primary" htmlType="submit">
+                <Button type="primary" htmlType="submit" loading={updating}>
                   Cập nhật
                 </Button>
               </Form.Item>

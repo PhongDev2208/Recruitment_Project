@@ -1,26 +1,24 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
 import { getDetailJob } from "../../services/jobService";
+import { useApi } from "../../hooks/useApi";
+import { Spin } from "antd";
 
 function CVJobName(props) {
   const { record } = props;
-  const [job, setJob] = useState();
+  const {
+    data: job,
+    loading,
+    error,
+  } = useApi(() => getDetailJob(record.idJob));
 
-  useEffect(() => {
-    const fetchApi = async () => {
-      const response = await getDetailJob(record.idJob);
-      if (response) {
-        setJob(response);
-      }
-    };
-    fetchApi();
-  }, []);
+  if (loading) {
+    return <Spin size="small" />;
+  }
 
-  return (
-    <>
-      {job && job.name}
-    </>
-  )
+  if (error) {
+    return <span style={{ color: "red" }}>Lỗi tải job</span>;
+  }
+
+  return <>{job && job.name}</>;
 }
 
 export default CVJobName;

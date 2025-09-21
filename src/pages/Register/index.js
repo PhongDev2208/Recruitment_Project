@@ -2,27 +2,44 @@ import { useNavigate } from "react-router-dom";
 import { generateToken } from "../../helpers/generateToken";
 import * as company from "../../services/companyService";
 import { Button, Card, Col, Input, Row, message, Form } from "antd";
-import { rules } from "../../contants";
+import { rules } from "../../constants";
 
 function Register() {
   const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
 
   const onFinish = async (values) => {
-    values.token = generateToken();
+    try {
+      values.token = generateToken();
 
-    const checkExistEmail = await company.checkExist("email", values.email);
-    const checkExistPhone = await company.checkExist("phone", values.phone);
+      const checkExistEmail = await company.checkExist("email", values.email);
+      const checkExistPhone = await company.checkExist("phone", values.phone);
 
-    if (checkExistEmail.length > 0) {
-      messageApi.error("Email đã tồn tại!");
-    } else if (checkExistPhone.length > 0) {
-      messageApi.error("Số điện thoại đã tồn tại!");
-    } else {
-      const result = await company.createCompany(values);
-      if (result) {
-        navigate("/login");
+      // Handle ResponseHandler format: {success, data, message}
+      if (
+        checkExistEmail.success &&
+        checkExistEmail.data &&
+        checkExistEmail.data.length > 0
+      ) {
+        messageApi.error("Email đã tồn tại!");
+      } else if (
+        checkExistPhone.success &&
+        checkExistPhone.data &&
+        checkExistPhone.data.length > 0
+      ) {
+        messageApi.error("Số điện thoại đã tồn tại!");
+      } else {
+        const result = await company.createCompany(values);
+        if (result.success) {
+          messageApi.success("Đăng ký thành công!");
+          navigate("/login");
+        } else {
+          messageApi.error("Đăng ký thất bại!");
+        }
       }
+    } catch (error) {
+      console.error("Register error:", error);
+      messageApi.error("Có lỗi xảy ra khi đăng ký!");
     }
   };
 

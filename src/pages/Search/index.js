@@ -3,32 +3,39 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getAllJob } from "../../services/jobService";
-import { Tag } from "antd";
+import { Tag, Spin, Alert } from "antd";
 import SearchList from "./SearchList";
+import { useApi } from "../../hooks/useApi";
 
 function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [data, setData] = useState();
+  const [filteredData, setFilteredData] = useState([]);
   const citySearch = searchParams.get("city") || "";
   const keywordSearch = searchParams.get("keyword") || "";
 
+  const { data, loading, error } = useApi(getAllJob);
+
   useEffect(() => {
-    const fetchApi = async () => {
-      const response = await getAllJob();
-      if (response) {
-        const newData = response.filter((item) => {
-          const city = citySearch ? item.city?.includes(citySearch) : true;
-          const keyword = keywordSearch
-            ? item.tags?.includes(keywordSearch)
-            : true;
-          const status = item.status;
-          return city && keyword && status;
-        });
-        setData(newData.reverse());
-      }
-    };
-    fetchApi();
-  }, []);
+    if (data && Array.isArray(data)) {
+      const newData = data.filter((item) => {
+        const city = citySearch ? item.city?.includes(citySearch) : true;
+        const keyword = keywordSearch
+          ? item.tags?.includes(keywordSearch)
+          : true;
+        const status = item.status;
+        return city && keyword && status;
+      });
+      setFilteredData(newData.reverse());
+    }
+  }, [data, citySearch, keywordSearch]);
+
+  if (loading) {
+    return <Spin size="large" />;
+  }
+
+  if (error) {
+    return <Alert message="Error loading jobs" type="error" showIcon />;
+  }
 
   return (
     <>
@@ -37,9 +44,7 @@ function Search() {
         {citySearch && <Tag>{citySearch}</Tag>}
         {keywordSearch && <Tag>{keywordSearch}</Tag>}
       </div>
-      {data && (
-        <SearchList data={data} />
-      )}
+      {filteredData && <SearchList data={filteredData} />}
     </>
   );
 }

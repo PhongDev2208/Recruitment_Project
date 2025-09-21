@@ -1,31 +1,31 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Card } from "antd";
-import { getCookie } from "../../helpers/cookie";
-import { useEffect, useState } from "react";
-import { getListCV } from "../../services/cvService";
+import { Card, Spin, Alert } from "antd";
+import { getCVStatistic } from "../../services/cvService";
+import { useApi } from "../../hooks/useApi";
 
 function CVStatistic() {
-  const idCompany = getCookie("id");
-  const [data, setData] = useState();
+  const { data, loading, error } = useApi(() => getCVStatistic());
 
-  useEffect(() => {
-    const fetchApi = async () => {
-      const response = await getListCV(idCompany);
-      if (response) {
-        let obj = {
-          total: 0,
-          statusTrue: 0,
-          statusFalse: 0,
-        };
-        obj.total = response.length;
-        response.forEach((item) => {
-          item.statusRead ? obj.statusTrue++ : obj.statusFalse++;
-        });
-        setData(obj);
-      }
-    };
-    fetchApi();
-  }, []);
+  if (loading) {
+    return (
+      <Card
+        title="CV"
+        className="mb-20"
+        size="small"
+        style={{ textAlign: "center" }}
+      >
+        <Spin size="large" />
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card title="CV" className="mb-20" size="small">
+        <Alert message="Lỗi" description={error} type="error" showIcon />
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -35,10 +35,10 @@ function CVStatistic() {
             Số lượng CV: <strong>{data.total}</strong>
           </div>
           <div>
-            CV đã đọc: <strong>{data.statusTrue}</strong>
+            CV đã đọc: <strong>{data.totalRead}</strong>
           </div>
           <div>
-            CV chưa đọc: <strong>{data.statusFalse}</strong>
+            CV chưa đọc: <strong>{data.totalUnread}</strong>
           </div>
         </Card>
       )}

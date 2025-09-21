@@ -2,11 +2,11 @@ import { Card, Tag } from "antd";
 import { Link } from "react-router-dom";
 
 function JobItem(props) {
-  const { item } = props;
+  const { item, infoCompany } = props;
   return (
     <>
       <Card
-        title={<Link to={`/job/${item.id}`}>{item.name}</Link>}
+        title={<Link to={`/job/${item._id}`}>{item.name}</Link>}
         size="small"
       >
         <div className="mb-10">
@@ -29,7 +29,14 @@ function JobItem(props) {
           Lương: <strong>{item.salary}$</strong>
         </div>
         <div className="mb-10">
-          Công ty: <strong>{item?.infoCompany?.companyName}</strong>
+          Công ty:{" "}
+          <strong>
+            {infoCompany?.companyName ||
+              infoCompany?.name ||
+              item?.infoCompany?.companyName ||
+              item?.infoCompany?.name ||
+              "Chưa cập nhật"}
+          </strong>
         </div>
         <div className="mb-10">
           Ngày tạo: <strong>{item.createAt}</strong>

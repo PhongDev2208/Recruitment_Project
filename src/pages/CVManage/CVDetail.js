@@ -1,34 +1,64 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { changeStatusCV, getDetailCV } from "../../services/cvService";
 import GoBack from "../../components/GoBack";
-import { Card, Tag } from "antd";
+import { Card, Tag, Spin, Alert } from "antd";
 import { getDetailJob } from "../../services/jobService";
+import { useApi, useAsyncOperation } from "../../hooks/useApi";
 
 function CVDetail() {
   const params = useParams();
-  const [cv, setCV] = useState();
-  const [job, setJob] = useState();
 
+  // Get CV details using useApi
+  const {
+    data: cv,
+    loading: cvLoading,
+    error: cvError,
+  } = useApi(() => getDetailCV(params.id), [params.id]);
+
+  // Get job details using useApi (only when we have CV data)
+  const {
+    data: job,
+    loading: jobLoading,
+    error: jobError,
+  } = useApi(cv?.idJob ? () => getDetailJob(cv.idJob) : null, [cv?.idJob]);
+
+  // Use async operation for marking CV as read
+  const { execute: markAsRead } = useAsyncOperation();
+
+  // Mark CV as read when CV is loaded
   useEffect(() => {
-    const fetchApi = async () => {
-      const response = await getDetailCV(params.id);
-      if (response) {
-        const responsejob = await getDetailJob(response.idJob);
-        if (responsejob) {
-          setCV(response);
-          setJob(responsejob);
-        }
-      }
-
-      changeStatusCV(params.id, { statusRead: true });
-    };
-    fetchApi();
+    if (cv && params.id) {
+      markAsRead(() => changeStatusCV(params.id, { statusRead: true }));
+    }
   }, []);
 
-  console.log(cv);
-  console.log(job);
+  const loading = cvLoading || jobLoading;
+  const error = cvError || jobError;
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "50px" }}>
+        <Spin size="large" />
+        <div style={{ marginTop: 16 }}>Đang tải thông tin CV...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <GoBack />
+        <Alert
+          message="Lỗi"
+          description={error}
+          type="error"
+          showIcon
+          style={{ marginTop: 16 }}
+        />
+      </>
+    );
+  }
 
   return (
     <>

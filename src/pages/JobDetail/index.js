@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getDetailJob } from "../../services/jobService";
 import {
@@ -14,53 +13,83 @@ import {
   Select,
 } from "antd";
 import { getDetailCompany } from "../../services/companyService";
-import { rules } from "../../contants";
+import { rules } from "../../constants";
 import { getTimeCurrent } from "../../helpers/getTime";
 import { createCV } from "../../services/cvService";
+import { useApi, useAsyncOperation } from "../../hooks/useApi";
 import GoBack from "../../components/GoBack";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import ErrorDisplay from "../../components/ErrorDisplay";
 const { TextArea } = Input;
 const { Option } = Select;
 
 function JobDetail() {
   const params = useParams();
-  const [job, setJob] = useState();
   const [form] = Form.useForm();
   const [noti, contextHolder] = notification.useNotification();
+  const { execute: submitCV, loading: submitting } = useAsyncOperation();
 
-  useEffect(() => {
-    const fetchApi = async () => {
-      const response = await getDetailJob(params.id);
-      const infoCompany = await getDetailCompany(response.idCompany);
-      const dataFinal = {
-        ...response,
-        infoCompany: infoCompany,
-      };
-      setJob(dataFinal);
-    };
-    fetchApi();
-  }, []);
+  // Get job details using useApi
+  const {
+    data: jobData,
+    loading: jobLoading,
+    error: jobError,
+  } = useApi(() => getDetailJob(params.id), [params.id]);
+
+  // Get company details using useApi (only when we have job data)
+  const {
+    data: companyData,
+    loading: companyLoading,
+    error: companyError,
+  } = useApi(
+    () => (jobData?.idCompany ? getDetailCompany(jobData.idCompany) : null),
+    [jobData?.idCompany]
+  );
+
+  // Combine data
+  const job =
+    jobData && companyData
+      ? {
+          ...jobData,
+          infoCompany: companyData,
+        }
+      : null;
+
+  const loading = jobLoading || (jobData && companyLoading);
+  const error = jobError || companyError;
 
   const onFinish = async (values) => {
-    values.idJob = job.id;
-    values.idCompany = job.infoCompany.id;
-    values.createAt = getTimeCurrent();
-    const response = await createCV(values);
-    if (response) {
+    try {
+      values.idJob = job._id;
+      values.idCompany = job.infoCompany._id;
+      values.createAt = getTimeCurrent();
+
+      await submitCV(() => createCV(values));
+
       form.resetFields();
       noti.success({
         message: `Gửi yêu cầu thành công!`,
         description:
           "Nhà tuyển dụng sẽ liên hệ với bạn trong thời gian sớm nhất.",
       });
-    } else {
+    } catch (err) {
       noti.error({
         message: `Gửi yêu cầu không thành công!`,
-        description: "Hệ thống đang gặp lỗi, vui lòng gửi lại yêu cầu.",
+        description:
+          err.message || "Hệ thống đang gặp lỗi, vui lòng gửi lại yêu cầu.",
       });
     }
   };
 
-  console.log(job);
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return (
+      <ErrorDisplay message="Error loading job detail" description={error} />
+    );
+  }
 
   return (
     <>
@@ -147,7 +176,7 @@ function JobDetail() {
                 <Col span={6}>
                   <Form.Item label="Thành phố" name="city" rules={rules}>
                     <Select>
-                      {job.city.map((item, index) => (
+                      {(job.city || []).map((item, index) => (
                         <Option value={item} label={item} key={index}></Option>
                       ))}
                     </Select>
@@ -173,7 +202,11 @@ function JobDetail() {
                 </Col>
                 <Col span={24}>
                   <Form.Item>
-                    <Button type="primary" htmlType="submit">
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={submitting}
+                    >
                       GỬI YÊU CẦU
                     </Button>
                   </Form.Item>

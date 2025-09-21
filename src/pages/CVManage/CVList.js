@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Button, Table, Tag, Tooltip } from "antd";
 import { Link } from "react-router-dom";
 import { EyeOutlined } from "@ant-design/icons";
@@ -7,25 +7,30 @@ import { getListCV } from "../../services/cvService";
 import { getCookie } from "../../helpers/cookie";
 import CVJobName from "./CVJobName";
 import DeleteCV from "./DeleteCV";
+import { useApi } from "../../hooks/useApi";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import ErrorDisplay from "../../components/ErrorDisplay";
 
 function CVList(props) {
   const idCompany = getCookie("id");
   const { className = "" } = props;
-  const [listCV, setListCV] = useState([]);
-
-  const fetchApi = async () => {
-    const response = await getListCV(idCompany);
-    if (response) {
-      setListCV(response.reverse());
-    }
-  };
-
-  useEffect(() => {
-    fetchApi();
-  }, []);
+  const {
+    data: listCV,
+    loading,
+    error,
+    refetch,
+  } = useApi(() => getListCV(idCompany));
 
   const handleReload = () => {
-    fetchApi();
+    refetch();
+  };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return <ErrorDisplay message="Error loading CV list" description={error} />;
   }
 
   const columns = [
@@ -33,9 +38,7 @@ function CVList(props) {
       title: "Tên job",
       dataIndex: "idJob",
       key: "idJob",
-      render: (_, record) => (
-        <CVJobName record={record} />
-      ),
+      render: (_, record) => <CVJobName record={record} />,
     },
     {
       title: "Họ tên",
@@ -55,9 +58,7 @@ function CVList(props) {
     {
       title: "Ngày gửi",
       key: "time",
-      render: (_, record) => (
-        <>{record.createAt}</>
-      ),
+      render: (_, record) => <>{record.createAt}</>,
     },
     {
       title: "Trạng thái",
@@ -78,7 +79,7 @@ function CVList(props) {
       key: "actions",
       render: (_, record) => (
         <>
-          <Link to={`/detail-cv/${record.id}`}>
+          <Link to={`/detail-cv/${record._id}`}>
             <Tooltip title="Xem chi tiết">
               <Button icon={<EyeOutlined />}></Button>
             </Tooltip>
@@ -92,7 +93,7 @@ function CVList(props) {
   return (
     <>
       <div className={className}>
-        <Table dataSource={listCV} columns={columns} rowKey="id" />
+        <Table dataSource={listCV || []} columns={columns} rowKey="_id" />
       </div>
     </>
   );
