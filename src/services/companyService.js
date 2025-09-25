@@ -1,15 +1,16 @@
 import { get, patch, post } from "../utils/request";
 
 export const login = async (email, password = "") => {
-  let pass = "";
+  const params = { email };
   if (password !== "") {
-    pass = `&password=${password}`;
+    params.password = password;
   }
-  return await get(`companies?email=${email}${pass}`);
+  return await get(`companies`, params);
 };
 
 export const checkExist = async (type, value) => {
-  return await get(`companies?${type}=${value}`);
+  const params = { [type]: value };
+  return await get(`companies`, params);
 };
 
 export const createCompany = async (options) => {
@@ -24,6 +25,6 @@ export const editCompany = async (id, options) => {
   return await patch(`companies/${id}`, options);
 };
 
-export const getAllCompany = async () => {
-  return await get(`companies`);
+export const getAllCompany = async (params = {}) => {
+  return await get(`companies`, params);
 };

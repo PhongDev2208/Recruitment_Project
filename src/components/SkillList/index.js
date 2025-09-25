@@ -1,4 +1,4 @@
-import { getListTag } from "../../services/tagService";
+import { getAllTags } from "../../services/tagService";
 import { Tag } from "antd";
 import { Link } from "react-router-dom";
 import { useApi } from "../../hooks/useApi";
@@ -6,7 +6,7 @@ import LoadingSpinner from "../LoadingSpinner";
 import ErrorDisplay from "../ErrorDisplay";
 
 function SkillList() {
-  const { data: tags, loading, error, refetch } = useApi(getListTag);
+  const { data: tags, loading, error, refetch } = useApi(getAllTags);
 
   if (loading) {
     return <LoadingSpinner size="small" message="Loading tags..." />;

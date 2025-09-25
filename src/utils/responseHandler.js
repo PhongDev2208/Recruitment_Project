@@ -11,6 +11,7 @@ class ResponseHandler {
         success: true,
         data: response.data,
         message: response.message,
+        pagination: response.pagination, // Include pagination field
       };
     } else {
       throw new Error(response.message || "Request failed");

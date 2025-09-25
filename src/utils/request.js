@@ -3,6 +3,25 @@ import { API_CONFIG, HTTP_STATUS } from "../constants/api";
 
 const API_DOMAIN = API_CONFIG.BASE_URL;
 
+// Utility function to build query string, filtering out undefined values
+const buildQueryString = (params) => {
+  if (!params || Object.keys(params).length === 0) {
+    return "";
+  }
+
+  // Filter out undefined values
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  );
+
+  if (Object.keys(filteredParams).length === 0) {
+    return "";
+  }
+
+  const queryString = new URLSearchParams(filteredParams).toString();
+  return queryString ? `?${queryString}` : "";
+};
+
 // Base request function with error handling
 const baseRequest = async (url, options = {}) => {
   try {
@@ -58,8 +77,11 @@ const baseRequest = async (url, options = {}) => {
   }
 };
 
-export const get = async (path, options = {}) => {
-  return baseRequest(API_DOMAIN + path, {
+export const get = async (path, params = {}, options = {}) => {
+  const queryString = buildQueryString(params);
+  const fullPath = path + queryString;
+
+  return baseRequest(API_DOMAIN + fullPath, {
     method: "GET",
     headers: {
       Accept: "application/json",

@@ -12,16 +12,16 @@ export const deleteJob = async (id) => {
   return await del(`jobs/${id}`);
 };
 
-export const getListJob = async (id) => {
-  return await get(`jobs?idCompany=${id}`);
+export const getListJob = async (params = {}) => {
+  return await get(`jobs`, params);
 };
 
 export const getDetailJob = async (id) => {
   return await get(`jobs/${id}`);
 };
 
-export const getAllJob = async () => {
-  return await get(`jobs`);
+export const getAllJob = async (params = {}) => {
+  return await get(`jobs`, params);
 };
 
 export const getJobStatistic = async () => {
